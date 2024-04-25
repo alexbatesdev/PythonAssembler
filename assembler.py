@@ -6,9 +6,9 @@ from helper import strip_commas, strip_parenthesis
 def main():
     parser = argparse.ArgumentParser(description="Process some integers.")
     parser.add_argument("--debug", action="store_true", help="Activate debug mode")
-    args = parser.parse_args()
+    script_arguments = parser.parse_args()
 
-    if args.debug:
+    if script_arguments.debug:
         print("Debug mode is on")
     else:
         print("Debug mode is off")
@@ -36,23 +36,32 @@ def main():
 
     with open(path, "r") as input_file:
         for line in input_file:
-            # print(line.replace("\n", ""))
+            if line == "\n":
+                continue
+            if script_arguments.debug:
+                print(line)
+                input("Press Enter to continue...")
             split_line = strip_parenthesis(strip_commas(line)).split()
-            # print(split_line)
             command = split_line[0]
-            # print(command)
-            args = split_line[1:]
-            # print(args)
+
+            if ">.>_" in split_line[1]:
+                condition = split_line[1].split(">.>_")[1]
+                args = split_line[2:]
+            else:
+                condition = "AL"
+                args = split_line[1:]
+
+            if script_arguments.debug:
+                print(line.replace("\n", ""))
+                print(split_line)
+                print(command)
+                print(condition)
+                print(args)
+
             try:
-                temp_data = methods[command](args)
-                # print(command, args)
-                if temp_data is not None:
-                    if type(temp_data) == list:
-                        for i in temp_data[::-1]:
-                            output.append(i)
-                        print(" ".join(temp_data))
-                    else:
-                        print(temp_data)
+                temp_data = methods[command](args, condition=condition)
+                print(temp_data.toBinary())
+                input("Press Enter to ...")
             except KeyError:
                 print("Command not found")
                 continue
@@ -74,3 +83,13 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# This bit swaps the bits for the raspberry pi
+# if temp_data is not None:
+#     if type(temp_data) == list:
+#         for i in temp_data[::-1]:
+#             output.append(i)
+#         print(" ".join(temp_data))
+#     else:
+#         print(temp_data)

@@ -1,148 +1,175 @@
 from helper import resolve_condition, resolve_register, strip_parenthesis
 
-
-def Comment(args: list):
-    print("Comment: " + " ".join(args))
-    return
+# TODO: Decrement all the args indexes by 1 because of the condition
+# being removed from the args list
 
 
-def MOVW(args: list):
-    condition = args[0]
-    register = resolve_register(args[1])
-    value = args[2]
-    if value[0:2] == "0x":
-        value = value[2:]
-    binary_value = bin(int(value, 16)).replace("0b", "").zfill(16)
-    imm4 = binary_value[0:4]
-    imm12 = binary_value[4:]
-    output = [
-        (resolve_condition(condition) + "0011"),
-        "0000" + imm4,
-        register + imm12[0:4],
-        imm12[4:12],
-    ]
-    return output
+class Command:
+    def __init__(self, args, condition="AL"):
+        self.condition = condition
+        self.args = args
+
+    def toBinary(self):
+        raise NotImplementedError("Subclasses should implement this method.")
 
 
-def MOVT(args: list):
-    condition = args[0]
-    register = resolve_register(args[1])
-    value = args[2]
-    if value[0:2] == "0x":
-        value = value[2:]
-    binary_value = bin(int(value, 16)).replace("0b", "").zfill(16)
-    imm4 = binary_value[0:4]
-    imm12 = binary_value[4:]
-    output = [
-        (resolve_condition(condition) + "0011"),
-        "0100" + imm4,
-        register + imm12[0:4],
-        imm12[4:14],
-    ]
-    return output
+class Comment(Command):
+    def toBinary(self):
+        print("Comment: " + " ".join(self.args))
+        return []
 
 
-def SingleDataProcess(opCode: str, args: list):
-    condition = resolve_condition(args[0])
-    special = "0"
-    if args[1] == "S":
-        special = "1"
-        register = resolve_register(args[2])
-        register2 = resolve_register(args[3])
-        value = args[4]
-    else:
-        register = resolve_register(args[1])
-        register2 = resolve_register(args[2])
-        value = args[3]
+class MOVW(Command):
+    def toBinary(self):
+        register = resolve_register(self.args[1])
+        value = self.args[2]
+        if value[0:2] == "0x":
+            value = value[2:]
+        binary_value = bin(int(value, 16)).replace("0b", "").zfill(16)
+        imm4 = binary_value[0:4]
+        imm12 = binary_value[4:]
+        output = [
+            (resolve_condition(self.condition) + "0011"),
+            "0000" + imm4,
+            register + imm12[0:4],
+            imm12[4:12],
+        ]
+        return output
 
-    immediate = "0"
-    if value[0:2] == "0x":
-        value = value[2:]
-        immediate = "1"
-    elif value[0] == "R":
+
+class MOVT(Command):
+    def toBinary(self):
+        register = resolve_register(self.args[1])
+        value = self.args[2]
+        if value[0:2] == "0x":
+            value = value[2:]
+        binary_value = bin(int(value, 16)).replace("0b", "").zfill(16)
+        imm4 = binary_value[0:4]
+        imm12 = binary_value[4:]
+        output = [
+            (resolve_condition(self.condition) + "0011"),
+            "0100" + imm4,
+            register + imm12[0:4],
+            imm12[4:14],
+        ]
+        return output
+
+
+class SingleDataProcess(Command):
+    def toBinary(self, opCode):
+        special = "0"
+        if self.args[1] == "S":
+            special = "1"
+            register = resolve_register(self.args[2])
+            register2 = resolve_register(self.args[3])
+            value = self.args[4]
+        else:
+            register = resolve_register(self.args[1])
+            register2 = resolve_register(self.args[2])
+            value = self.args[3]
+
         immediate = "0"
-        value = value.replace("R", "")
-    else:
-        value = value
-        immediate = "1"
+        if value[0:2] == "0x":
+            value = value[2:]
+            immediate = "1"
+        elif value[0] == "R":
+            immediate = "0"
+            value = value.replace("R", "")
+        else:
+            value = value
+            immediate = "1"
 
-    binary_value = bin(int(value, 16)).replace("0b", "").zfill(12)
-    output = [
-        (condition + "00" + immediate + opCode[0]),
-        (opCode[1:] + special + register2),
-        register + binary_value[0:4],
-        binary_value[4:12],
-    ]
-    return output
+        binary_value = bin(int(value, 16)).replace("0b", "").zfill(12)
+        output = [
+            (self.condition + "00" + immediate + opCode[0]),
+            (opCode[1:] + special + register2),
+            register + binary_value[0:4],
+            binary_value[4:12],
+        ]
+        return output
 
 
-def ADD(args: list):
-    return SingleDataProcess("0100", args)
+class ADD(SingleDataProcess):
+    def toBinary(self):
+        return super().toBinary("0100")
 
 
-def SingleDataTransfer(l: str, args: list):
-    condition = resolve_condition(args[0])
-    register = resolve_register(args[1])
-    value = resolve_register(args[2])
-    immediate = "0"
-    if value[0:2] == "0x":
-        value = value[2:]
-        immediate = "1"
-    elif value[0] == "R":
+class SUB(SingleDataProcess):
+    def toBinary(self):
+        return super().toBinary("0010")
+
+
+class ORR(SingleDataProcess):
+    def toBinary(self):
+        return super().toBinary("1100")
+
+
+class SingleDataTransfer(Command):
+    def toBinary(self, load):
+        register = resolve_register(self.args[1])
+        value = resolve_register(self.args[2])
         immediate = "0"
-        value = value.replace("R", "")
+        if value[0:2] == "0x":
+            value = value[2:]
+            immediate = "1"
+        elif value[0] == "R":
+            immediate = "0"
+            value = value.replace("R", "")
 
-    # Values for the future
-    p = "0"
-    u = "0"
-    b = "0"
-    w = "0"
-    offset = "000000000000"
+        # Values for the future
+        p = "0"
+        u = "0"
+        b = "0"
+        w = "0"
+        offset = "000000000000"
 
-    output = [
-        (condition + "01" + immediate + p),
-        (u + b + w + l + value),
-        (register + offset[0:4]),
-        (offset[4:12]),
-    ]
-    return output
-
-
-def LDR(args: list):
-    return SingleDataTransfer("1", args)
-
-
-def ORR(args: list):
-    return SingleDataProcess("1100", args)
+        output = [
+            (self.condition + "01" + immediate + p),
+            (u + b + w + load + value),
+            (register + offset[0:4]),
+            (offset[4:12]),
+        ]
+        return output
 
 
-def STR(args: list):
-    return SingleDataTransfer("0", args)
+class LDR(SingleDataTransfer):
+    def toBinary(self):
+        return super().toBinary("1")
 
 
-def SUB(args: list):
-    return SingleDataProcess("0010", args)
+class STR(SingleDataTransfer):
+    def toBinary(self):
+        return super().toBinary("0")
 
 
-def Branch(link: str, args: list):
-    condition = resolve_condition(args[0])
-    offset = bin(int(args[1], 16)).replace("0b", "").zfill(24)
-    output = [
-        (condition + "101" + link),
-        offset[0:8],
-        offset[8:16],
-        offset[16:24],
-    ]
-    return output
+class Branch(Command):
+    def toBinary(self, link):
+        offset = bin(int(self.args[1], 16)).replace("0b", "").zfill(24)
+        output = [
+            (self.condition + "101" + link),
+            offset[0:8],
+            offset[8:16],
+            offset[16:24],
+        ]
+        return output
 
 
-def B(args: list):
-    return Branch("0", args)
+class B(Branch):
+    def toBinary(self):
+        return super().toBinary("0")
 
 
-def BL(args: list):
-    return Branch("1", args)
+class BL(Branch):
+    def toBinary(self):
+        return super().toBinary("1")
 
 
-def BX(args: list):
-    condition = resolve_condition(args[0])
+class BX(Command):
+    def toBinary(self):
+        register = resolve_register(self.args[1])
+        output = [
+            (self.condition + "00010010"),
+            "0000" + register,
+            "000000000000",
+        ]
+        return output
