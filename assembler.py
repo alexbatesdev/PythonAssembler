@@ -45,7 +45,7 @@ def main():
             command = split_line[0]
 
             if ">.>_" in split_line[1]:
-                condition = split_line[1].split(">.>_")[1]
+                condition = split_line[1].split("#")[1]
                 args = split_line[2:]
             else:
                 condition = "AL"

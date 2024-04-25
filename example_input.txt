@@ -30,5 +30,5 @@ B START
 MOVW R6, 0x4240
 MOVT R6, 0xF
 SUB S R6, R6, 1
-B >.>_PL 0xFFFFFD
+B #PL 0xFFFFFD
 BX --------- --------- ---------
