@@ -5,9 +5,10 @@ from helper import resolve_condition, resolve_register, strip_parenthesis
 
 
 class Command:
-    def __init__(self, args, condition="AL"):
-        self.condition = condition
+    def __init__(self, args, condition="AL", label=None):
+        self.condition = resolve_condition(condition)
         self.args = args
+        self.label = None
 
     def toBinary(self):
         raise NotImplementedError("Subclasses should implement this method.")
@@ -21,15 +22,15 @@ class Comment(Command):
 
 class MOVW(Command):
     def toBinary(self):
-        register = resolve_register(self.args[1])
-        value = self.args[2]
+        register = resolve_register(self.args[0])
+        value = self.args[1]
         if value[0:2] == "0x":
             value = value[2:]
         binary_value = bin(int(value, 16)).replace("0b", "").zfill(16)
         imm4 = binary_value[0:4]
         imm12 = binary_value[4:]
         output = [
-            (resolve_condition(self.condition) + "0011"),
+            self.condition + "0011",
             "0000" + imm4,
             register + imm12[0:4],
             imm12[4:12],
@@ -39,15 +40,15 @@ class MOVW(Command):
 
 class MOVT(Command):
     def toBinary(self):
-        register = resolve_register(self.args[1])
-        value = self.args[2]
+        register = resolve_register(self.args[0])
+        value = self.args[1]
         if value[0:2] == "0x":
             value = value[2:]
         binary_value = bin(int(value, 16)).replace("0b", "").zfill(16)
         imm4 = binary_value[0:4]
         imm12 = binary_value[4:]
         output = [
-            (resolve_condition(self.condition) + "0011"),
+            self.condition + "0011",
             "0100" + imm4,
             register + imm12[0:4],
             imm12[4:14],
@@ -58,15 +59,15 @@ class MOVT(Command):
 class SingleDataProcess(Command):
     def toBinary(self, opCode):
         special = "0"
-        if self.args[1] == "S":
+        if self.args[0] == "S":
             special = "1"
-            register = resolve_register(self.args[2])
-            register2 = resolve_register(self.args[3])
-            value = self.args[4]
-        else:
             register = resolve_register(self.args[1])
             register2 = resolve_register(self.args[2])
             value = self.args[3]
+        else:
+            register = resolve_register(self.args[0])
+            register2 = resolve_register(self.args[1])
+            value = self.args[2]
 
         immediate = "0"
         if value[0:2] == "0x":
@@ -106,8 +107,8 @@ class ORR(SingleDataProcess):
 
 class SingleDataTransfer(Command):
     def toBinary(self, load):
-        register = resolve_register(self.args[1])
-        value = resolve_register(self.args[2])
+        register = resolve_register(self.args[0])
+        value = resolve_register(self.args[1])
         immediate = "0"
         if value[0:2] == "0x":
             value = value[2:]
@@ -143,13 +144,16 @@ class STR(SingleDataTransfer):
 
 
 class Branch(Command):
+    def __init__(self, args, condition="AL", label=None):
+        super().__init__(args, condition, label)
+        self.offset = args[0]
+
     def toBinary(self, link):
-        offset = bin(int(self.args[1], 16)).replace("0b", "").zfill(24)
         output = [
             (self.condition + "101" + link),
-            offset[0:8],
-            offset[8:16],
-            offset[16:24],
+            self.offset[0:8],
+            self.offset[8:16],
+            self.offset[16:24],
         ]
         return output
 
@@ -166,10 +170,15 @@ class BL(Branch):
 
 class BX(Command):
     def toBinary(self):
-        register = resolve_register(self.args[1])
+        if len(self.args) > 0:
+            register = resolve_register(self.args[0])
+        else:
+            register = resolve_register("R14")
+
         output = [
-            (self.condition + "00010010"),
-            "0000" + register,
-            "000000000000",
+            self.condition + "0001",
+            "0010" + "1111",
+            "1111" + "1111",
+            "0001" + register,
         ]
         return output

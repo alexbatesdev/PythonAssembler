@@ -1,5 +1,5 @@
 import argparse
-from commands import Comment, MOVW, MOVT, ADD, LDR, ORR, STR, SUB, B, BL
+from commands import Comment, MOVW, MOVT, ADD, LDR, ORR, STR, SUB, B, BL, BX
 from helper import strip_commas, strip_parenthesis
 
 
@@ -25,9 +25,10 @@ def main():
         "SUB": SUB,
         "B": B,
         "BL": BL,
+        "BX": BX,
     }
 
-    output = []
+    instruction_set = []
 
     path = "input.txt"
     # path_input = input("Enter the path of the input file (./input.txt): ")
@@ -38,30 +39,41 @@ def main():
         for line in input_file:
             if line == "\n":
                 continue
-            if script_arguments.debug:
-                print(line)
-                input("Press Enter to continue...")
-            split_line = strip_parenthesis(strip_commas(line)).split()
-            command = split_line[0]
 
-            if ">.>_" in split_line[1]:
-                condition = split_line[1].split("#")[1]
+            label = None
+            if ":3" in line and ":3c" not in line:
+                label = line.split(":3")[1].replace("\n", "").strip()
+                line = line.split(":3")[0]
+
+            split_line = strip_parenthesis(strip_commas(line)).split()
+
+            if "#" in split_line[0]:
+                condition = split_line[0].split("#")[1]
+                command = split_line[1]
                 args = split_line[2:]
             else:
                 condition = "AL"
+                command = split_line[0]
                 args = split_line[1:]
 
-            if script_arguments.debug:
-                print(line.replace("\n", ""))
-                print(split_line)
-                print(command)
-                print(condition)
-                print(args)
-
             try:
-                temp_data = methods[command](args, condition=condition)
-                print(temp_data.toBinary())
-                input("Press Enter to ...")
+                temp_data = methods[command](args, condition=condition, label=label)
+                if temp_data is not None:
+                    instruction_set.append(temp_data)
+                else:
+                    print("Command not found")
+                    continue
+                if script_arguments.debug:
+                    # print(line.replace("\n", ""))
+                    # print(split_line)
+                    # print(condition)
+                    # print(command)
+                    # print(args)
+                    if label is not None:
+                        print(label)
+                    # print(temp_data.toBinary())
+                    # print(instruction_set)
+                    input("Press Enter to continue...")
             except KeyError:
                 print("Command not found")
                 continue
@@ -70,15 +82,21 @@ def main():
                 continue
 
     path = "output.txt"
-    path_output = input("Enter the output path of the file (./output.txt): ")
-    if path_output != "":
-        path = path_output
+    # path_output = input("Enter the output path of the file (./output.txt): ")
+    # if path_output != "":
+    #     path = path_output
 
     with open(path, "wb") as output_file:
-        binary_values = output
+        binary_values = [b for i in instruction_set for b in i.toBinary()]
+        print("Binary values: ")
+        print(binary_values)
         byte_array = bytes([int(b, 2) for b in binary_values])
         output_file.write(byte_array)
         output_file.close()
+
+
+def FindOffset():
+    pass
 
 
 if __name__ == "__main__":
