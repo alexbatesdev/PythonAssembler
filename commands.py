@@ -131,10 +131,6 @@ class STR(SingleDataTransfer):
         return super().toBinary("0")
 
 
-# TODO: Fix the label goblin
-# He can't properly count offsets
-
-
 class Branch(Command):
     def __init__(self, args, condition="AL", label=None):
         super().__init__(args, condition, label)

@@ -56,7 +56,6 @@ def main():
                 ):
                     instruction_set.append(instruction_object)
                     print(line.replace("\n", ""))
-                    # input("Press Enter to continue...")
                 elif instruction_object.__class__.__name__ == "Comment":
                     instruction_object.toBinary()
                 else:
