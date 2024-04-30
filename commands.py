@@ -1,17 +1,5 @@
-from helper import resolve_condition, resolve_register, strip_parenthesis
-
-# TODO: Decrement all the args indexes by 1 because of the condition
-# being removed from the args list
-
-
-class Command:
-    def __init__(self, args, condition="AL", label=None):
-        self.condition = resolve_condition(condition)
-        self.args = args
-        self.label = None
-
-    def toBinary(self):
-        raise NotImplementedError("Subclasses should implement this method.")
+from helper import resolve_register
+from data_structures import Command
 
 
 class Comment(Command):
@@ -143,19 +131,80 @@ class STR(SingleDataTransfer):
         return super().toBinary("0")
 
 
+# TODO: Fix the label goblin
+# He can't properly count offsets
+
+
 class Branch(Command):
     def __init__(self, args, condition="AL", label=None):
         super().__init__(args, condition, label)
-        self.offset = args[0]
+        self.offset = None
+        if "0x" in args[0]:
+            self.offset = bin(int(args[0], 16)).replace("0b", "").zfill(24)
+        elif args[0] != ":3c":
+            raise SyntaxError(
+                "Branch must have a label gremlin to measure the offset, or a pre measured hexadecimal offset."
+            )
+        print(self.offset)
+
+    def __find_label__(self):
+        label_goblin = self
+        label = None
+        offset = -2
+        print(label_goblin)
+        while label_goblin.previous is not None:
+            label_goblin = label_goblin.previous
+            if label_goblin.__class__.__name__ == "Comment":
+                continue
+            offset -= 1
+            if label_goblin.label == self.offset:
+                label = label_goblin.label
+                break
+            print(label_goblin)
+            input("pause")
+        if label is None:
+            label_goblin = self
+            offset = -2
+            while label_goblin.next is not None:
+                label_goblin = label_goblin.next
+                if label_goblin.__class__.__name__ == "Comment":
+                    continue
+                offset += 1
+                if label_goblin.label == self.offset:
+                    label = label_goblin.label
+                    break
+                print(label_goblin)
+                input("pause")
+
+        print(offset)
+        print(self.__parse_offset__(str(offset)))
+        input("HALT")
+
+        if label_goblin.label != self.offset:
+            raise SyntaxError("Label not found.")
+        return self.__parse_offset__(str(offset))
 
     def toBinary(self, link):
+        if self.offset is None:
+            self.offset = self.__find_label__()
         output = [
             (self.condition + "101" + link),
             self.offset[0:8],
             self.offset[8:16],
             self.offset[16:24],
         ]
+        print("toBinary")
         return output
+
+    def __parse_offset__(self, offset):
+        if offset[0] == "-":
+            offset_positive = offset[1:]
+            offset_binary = bin(int(offset_positive)).replace("0b", "").zfill(24)
+            offset_inverse = "".join(["1" if x == "0" else "0" for x in offset_binary])
+            offset = bin(int(offset_inverse, 2) + 1).replace("0b", "").zfill(24)
+        else:
+            offset = bin(int(offset)).replace("0b", "").zfill(24)
+        return offset
 
 
 class B(Branch):
@@ -182,3 +231,8 @@ class BX(Command):
             "0001" + register,
         ]
         return output
+
+
+if __name__ == "__main__":
+    node = Comment(["This is a comment"])
+    node.setNext(Comment(["This is another comment"]))

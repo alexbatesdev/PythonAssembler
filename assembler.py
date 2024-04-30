@@ -1,5 +1,6 @@
 import argparse
 from commands import Comment, MOVW, MOVT, ADD, LDR, ORR, STR, SUB, B, BL, BX
+from data_structures import CommandList, Command
 from helper import strip_commas, strip_parenthesis
 
 
@@ -28,7 +29,7 @@ def main():
         "BX": BX,
     }
 
-    instruction_set = []
+    instruction_set = CommandList()
 
     path = "input.txt"
     # path_input = input("Enter the path of the input file (./input.txt): ")
@@ -57,9 +58,16 @@ def main():
                 args = split_line[1:]
 
             try:
-                temp_data = methods[command](args, condition=condition, label=label)
-                if temp_data is not None:
-                    instruction_set.append(temp_data)
+                instruction_object = methods[command](
+                    args, condition=condition, label=label
+                )
+                if (
+                    instruction_object is not None
+                    and instruction_object.__class__.__name__ != "Comment"
+                ):
+                    instruction_set.append(instruction_object)
+                    instruction_set.print()
+                    input("Press Enter to continue...")
                 else:
                     print("Command not found")
                     continue
@@ -71,9 +79,10 @@ def main():
                     # print(args)
                     if label is not None:
                         print(label)
-                    # print(temp_data.toBinary())
+                    # print(instruction_object)
+                    # print(instruction_object.toBinary())
                     # print(instruction_set)
-                    input("Press Enter to continue...")
+                    # input("Press Enter to continue...")
             except KeyError:
                 print("Command not found")
                 continue
@@ -87,9 +96,11 @@ def main():
     #     path = path_output
 
     with open(path, "wb") as output_file:
-        binary_values = [b for i in instruction_set for b in i.toBinary()]
+        input("Press Enter to continue to binary")
+        binary_values = instruction_set.toBinary()
         print("Binary values: ")
         print(binary_values)
+        input("Press Enter to continue...")
         byte_array = bytes([int(b, 2) for b in binary_values])
         output_file.write(byte_array)
         output_file.close()
