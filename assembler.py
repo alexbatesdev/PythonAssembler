@@ -1,20 +1,9 @@
-import argparse
 from commands import Comment, MOVW, MOVT, ADD, LDR, ORR, STR, SUB, B, BL, BX
-from data_structures import CommandList, Command
+from data_structures import CommandList
 from helper import strip_commas, strip_parenthesis
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument("--debug", action="store_true", help="Activate debug mode")
-    script_arguments = parser.parse_args()
-
-    if script_arguments.debug:
-        print("Debug mode is on")
-    else:
-        print("Debug mode is off")
-
-    # Return None, or a list of binary values in 2 byte chunks
     methods = {
         "^^": Comment,
         "MOVW": MOVW,
@@ -32,9 +21,9 @@ def main():
     instruction_set = CommandList()
 
     path = "input.txt"
-    # path_input = input("Enter the path of the input file (./input.txt): ")
-    # if path_input != "":
-    #     path = path_input
+    path_input = input("Enter the path of the input file (./input.txt): ")
+    if path_input != "":
+        path = path_input
 
     with open(path, "r") as input_file:
         for line in input_file:
@@ -73,18 +62,6 @@ def main():
                 else:
                     print("Command not found")
                     continue
-                if script_arguments.debug:
-                    # print(line.replace("\n", ""))
-                    # print(split_line)
-                    # print(condition)
-                    # print(command)
-                    # print(args)
-                    if label is not None:
-                        print(label)
-                    # print(instruction_object)
-                    # print(instruction_object.toBinary())
-                    # print(instruction_set)
-                    # input("Press Enter to continue...")
             except KeyError:
                 print("Command not found")
                 continue
@@ -93,9 +70,9 @@ def main():
                 continue
 
     path = "output.txt"
-    # path_output = input("Enter the output path of the file (./output.txt): ")
-    # if path_output != "":
-    #     path = path_output
+    path_output = input("Enter the output path of the file (./output.txt): ")
+    if path_output != "":
+        path = path_output
 
     with open(path, "wb") as output_file:
         input("Press Enter to continue to binary")
@@ -114,13 +91,3 @@ def FindOffset():
 
 if __name__ == "__main__":
     main()
-
-
-# This bit swaps the bits for the raspberry pi
-# if temp_data is not None:
-#     if type(temp_data) == list:
-#         for i in temp_data[::-1]:
-#             output.append(i)
-#         print(" ".join(temp_data))
-#     else:
-#         print(temp_data)

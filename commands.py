@@ -161,10 +161,6 @@ class Branch(Command):
             if label_goblin.label == self.target_label:
                 label = label_goblin.label
                 break
-            # print(label_goblin)
-            # print(label_goblin.label)
-            # print(self.target_label)
-            # input("Press Enter to continue...")
         if label is None:
             label_goblin = self
             offset = -2
@@ -176,15 +172,6 @@ class Branch(Command):
                 if label_goblin.label == self.target_label:
                     label = label_goblin.label
                     break
-                # print(label_goblin)
-                # print(label_goblin.label)
-                # print(self.target_label)
-                # input("Press Enter to continue...")
-
-        # print(offset)
-        # print(self.__parse_offset__(str(offset)))
-        # input("HALT")
-
         if label is None:
             raise SyntaxError("Label not found.")
         return self.__parse_offset__(str(offset))
