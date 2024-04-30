@@ -18,7 +18,11 @@ class CommandList:
         binary = []
         current = self.head
         while current is not None:
-            binary.extend(current.toBinary())
+            current_binary = current.toBinary()
+            inverted_binary = []
+            for i in current_binary[::-1]:
+                inverted_binary.append(i)
+            binary.extend(inverted_binary)
             current = current.next
         return binary
 

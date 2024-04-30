@@ -66,8 +66,10 @@ def main():
                     and instruction_object.__class__.__name__ != "Comment"
                 ):
                     instruction_set.append(instruction_object)
-                    instruction_set.print()
-                    input("Press Enter to continue...")
+                    print(line.replace("\n", ""))
+                    # input("Press Enter to continue...")
+                elif instruction_object.__class__.__name__ == "Comment":
+                    instruction_object.toBinary()
                 else:
                     print("Command not found")
                     continue
