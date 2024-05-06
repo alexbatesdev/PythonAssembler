@@ -94,6 +94,24 @@ class ORR(SingleDataProcess):
 
 
 class SingleDataTransfer(Command):
+    def __init__(
+        self,
+        args,
+        condition="AL",
+        label=None,
+        p_bit="0",
+        u_bit="0",
+        b_bit="0",
+        w_bit="0",
+        offset="000000000000",
+    ):
+        super().__init__(args, condition, label)
+        self.p_bit = p_bit
+        self.u_bit = u_bit
+        self.b_bit = b_bit
+        self.w_bit = w_bit
+        self.offset = offset
+
     def toBinary(self, load):
         register = resolve_register(self.args[0])
         value = resolve_register(self.args[1])
@@ -105,18 +123,11 @@ class SingleDataTransfer(Command):
             immediate = "0"
             value = value.replace("R", "")
 
-        # Values for the future
-        p = "0"
-        u = "0"
-        b = "0"
-        w = "0"
-        offset = "000000000000"
-
         output = [
-            (self.condition + "01" + immediate + p),
-            (u + b + w + load + value),
-            (register + offset[0:4]),
-            (offset[4:12]),
+            (self.condition + "01" + immediate + self.p_bit),
+            (self.u_bit + self.b_bit + self.w_bit + load + value),
+            (register + self.offset[0:4]),
+            (self.offset[4:12]),
         ]
         return output
 

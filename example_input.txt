@@ -1,3 +1,14 @@
+^^ Set stack pointer to 0
+MOVW R13, 0x0
+MOVT R13, 0x0
+
+^^ Adjust Stack pointer
+^^ pre-decrement load
+LDREA R13! R6, 0x4
+^^ post-increment store
+STREA R13! R6, 0x4
+^^ ! means the w bit is on
+
 ^^ Set pin as output
 MOVW R4, 0
 MOVT R4, 0x3F20
@@ -7,13 +18,12 @@ ORR R3, R3, 0x00000008
 STR R3, (R2)
 
 ^^ Turn pin on
-:3 START
-ADD R3, R4, 0x1C 
+ADD R3, R4, 0x1C :3 START
 MOVW R2, 0x0000
 MOVT R2, 0x0020
 STR R2, (R3)
 
-BL --------- --------- WAIT
+BL :3c WAIT
 
 ^^ Turn pin off
 ADD R3, R4, 0x28
@@ -21,14 +31,13 @@ MOVW R2, 0x0000
 MOVT R2, 0x0020
 STR R2, (R3)
 
-BL --------- --------- WAIT
+BL :3c WAIT
 
-B START
+B :3c START
 
 ^^ Wait for a moment
-:3 WAIT
-MOVW R6, 0x4240
+MOVW R6, 0x4240 :3 WAIT
 MOVT R6, 0xF
 SUB S R6, R6, 1
 #PL B 0xFFFFFD
-BX --------- --------- ---------
+BX
