@@ -35,6 +35,8 @@ BL :3c WAIT
 
 B :3c START
 
+^^ Modify so the data is from the stack instead of hard coded or in a register
+
 ^^ Wait for a moment
 MOVW R6, 0x4240 :3 WAIT
 MOVT R6, 0xF
