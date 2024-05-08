@@ -35,17 +35,18 @@ class CommandList:
     def print(self):
         current = self.head
         while current is not None:
-            print(current)
             current = current.next
 
 
 class Command:
-    def __init__(self, args, condition="AL", label=None):
-        self.condition: str = resolve_condition(condition)
+    def __init__(self, args, label=None):
         self.args: list[str] = args
         self.label: str = label
         self.next: Command = None
         self.previous: Command = None
+        self.condition = resolve_condition(
+            self.args[0].replace(self.__class__.__name__, "")
+        )
 
     def toBinary(self):
         raise NotImplementedError("Subclasses should implement this method.")

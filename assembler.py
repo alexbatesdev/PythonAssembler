@@ -1,4 +1,4 @@
-from commands import Comment, MOVW, MOVT, ADD, LDR, ORR, STR, SUB, B, BL, BX
+from commands import Comment, MOVW, MOVT, ADD, LDR, ORR, STR, SUB, B, BX, LDM, STM
 from data_structures import CommandList
 from helper import strip_commas, strip_parenthesis
 
@@ -8,14 +8,15 @@ def main():
         "^^": Comment,
         "MOVW": MOVW,
         "MOVT": MOVT,
-        "ADD": ADD,
         "LDR": LDR,
-        "ORR": ORR,
         "STR": STR,
+        "LDM": LDM,
+        "STM": STM,
+        "ORR": ORR,
+        "ADD": ADD,
         "SUB": SUB,
-        "B": B,
-        "BL": BL,
         "BX": BX,
+        "B": B,
     }
 
     instruction_set = CommandList()
@@ -37,19 +38,15 @@ def main():
 
             split_line = strip_parenthesis(strip_commas(line)).split()
 
-            if "#" in split_line[0]:
-                condition = split_line[0].split("#")[1]
-                command = split_line[1]
-                args = split_line[2:]
-            else:
-                condition = "AL"
-                command = split_line[0]
-                args = split_line[1:]
+            # Iterate through the methods dictionary to find the correct command
+            for command in methods.keys():
+                if command in split_line:
+                    break
+
+            args = split_line
 
             try:
-                instruction_object = methods[command](
-                    args, condition=condition, label=label
-                )
+                instruction_object = methods[command](args, label=label)
                 if (
                     instruction_object is not None
                     and instruction_object.__class__.__name__ != "Comment"

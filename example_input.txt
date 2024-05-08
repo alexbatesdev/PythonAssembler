@@ -4,9 +4,9 @@ MOVT R13, 0x0
 
 ^^ Adjust Stack pointer
 ^^ pre-decrement load
-LDREA R13! R6, 0x4
+^^ LDREA R13! R6, 0x4
 ^^ post-increment store
-STREA R13! R6, 0x4
+^^ STREA R13! R6, 0x4
 ^^ ! means the w bit is on
 
 ^^ Set pin as output
@@ -23,6 +23,14 @@ MOVW R2, 0x0000
 MOVT R2, 0x0020
 STR R2, (R3)
 
+^^ Store all our registers
+STMEA R13!, {R0-12}
+^^ Put 1 Million in R7
+MOVW R7, 0x4240
+MOVT R7, 0xF
+^^ Store R7 on the stack
+STREA R13!, R7, 0x4
+^^ Go to Subroutine
 BL :3c WAIT
 
 ^^ Turn pin off
@@ -31,15 +39,23 @@ MOVW R2, 0x0000
 MOVT R2, 0x0020
 STR R2, (R3)
 
+^^ Store all our registers
+STMEA R13!, {R0-12}
+^^ Put 1 Million in R7
+MOVW R7, 0x4240
+MOVT R7, 0xF
+^^ Store R7 on the stack
+STREA R13!, R7, 0x4
+^^ Go to Subroutine
 BL :3c WAIT
 
 B :3c START
 
-^^ Modify so the data is from the stack instead of hard coded or in a register
-
-^^ Wait for a moment
-MOVW R6, 0x4240 :3 WAIT
-MOVT R6, 0xF
+^^ Wait -[Subroutine]-
+^^ Pop the top off the stack
+LDREA R13! R6, 0x4 :3 WAIT
 SUB S R6, R6, 1
-#PL B 0xFFFFFD
+BPL 0xFFFFFD
+^^ load all our registers
+LDMEA R13!, {R0-12}
 BX

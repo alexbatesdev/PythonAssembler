@@ -1,4 +1,4 @@
-from helper import resolve_register
+from helper import resolve_register, find_label
 from data_structures import Command
 
 
@@ -10,8 +10,8 @@ class Comment(Command):
 
 class MOVW(Command):
     def toBinary(self):
-        register = resolve_register(self.args[0])
-        value = self.args[1]
+        register = resolve_register(self.args[1])
+        value = self.args[2]
         if value[0:2] == "0x":
             value = value[2:]
         binary_value = bin(int(value, 16)).replace("0b", "").zfill(16)
@@ -28,8 +28,8 @@ class MOVW(Command):
 
 class MOVT(Command):
     def toBinary(self):
-        register = resolve_register(self.args[0])
-        value = self.args[1]
+        register = resolve_register(self.args[1])
+        value = self.args[2]
         if value[0:2] == "0x":
             value = value[2:]
         binary_value = bin(int(value, 16)).replace("0b", "").zfill(16)
@@ -47,15 +47,15 @@ class MOVT(Command):
 class SingleDataProcess(Command):
     def toBinary(self, opCode):
         special = "0"
-        if self.args[0] == "S":
+        if self.args[1] == "S":
             special = "1"
+            register = resolve_register(self.args[2])
+            register2 = resolve_register(self.args[3])
+            value = self.args[4]
+        else:
             register = resolve_register(self.args[1])
             register2 = resolve_register(self.args[2])
             value = self.args[3]
-        else:
-            register = resolve_register(self.args[0])
-            register2 = resolve_register(self.args[1])
-            value = self.args[2]
 
         immediate = "0"
         if value[0:2] == "0x":
@@ -93,6 +93,7 @@ class ORR(SingleDataProcess):
         return super().toBinary("1100")
 
 
+# Page 26 - ARM instruction set
 class SingleDataTransfer(Command):
     def __init__(
         self,
@@ -113,8 +114,8 @@ class SingleDataTransfer(Command):
         self.offset = offset
 
     def toBinary(self, load):
-        register = resolve_register(self.args[0])
-        value = resolve_register(self.args[1])
+        register = resolve_register(self.args[1])
+        value = resolve_register(self.args[2])
         immediate = "0"
         if value[0:2] == "0x":
             value = value[2:]
@@ -142,83 +143,70 @@ class STR(SingleDataTransfer):
         return super().toBinary("0")
 
 
-class Branch(Command):
+# page 37 - ARM instruction set
+class BlockDataTransfer(Command):
     def __init__(self, args, condition="AL", label=None):
         super().__init__(args, condition, label)
+        raise NotImplementedError("BlockDataTransfer is not implemented yet.")
+
+    def toBinary(self, load):
+        raise NotImplementedError("BlockDataTransfer is not implemented yet.")
+
+
+class STM(BlockDataTransfer):
+    def toBinary(self):
+        return super().toBinary("0")
+
+
+class LDM(BlockDataTransfer):
+    def toBinary(self):
+        return super().toBinary("1")
+
+
+class Branch(Command):
+    def __init__(self, args, link, label=None):
+        super().__init__(args, label)
         self.offset = None
         self.target_label = None
-        if "0x" in args[0]:
-            self.offset = bin(int(args[0], 16)).replace("0b", "").zfill(24)
-        elif args[0] != ":3c":
+        self.link = link
+        if "0x" in args[1]:
+            self.offset = bin(int(args[1], 16)).replace("0b", "").zfill(24)
+        elif args[1] != ":3c":
             raise SyntaxError(
                 "Branch must have a label gremlin to measure the offset, or a pre measured hexadecimal offset."
             )
         else:
-            self.target_label = args[1]
+            self.target_label = args[2]
 
-    def __find_label__(self):
-        label_goblin = self
-        label = None
-        offset = -2
-        while label_goblin.previous is not None:
-            label_goblin = label_goblin.previous
-            if label_goblin.__class__.__name__ == "Comment":
-                continue
-            offset -= 1
-            if label_goblin.label == self.target_label:
-                label = label_goblin.label
-                break
-        if label is None:
-            label_goblin = self
-            offset = -2
-            while label_goblin.next is not None:
-                label_goblin = label_goblin.next
-                if label_goblin.__class__.__name__ == "Comment":
-                    continue
-                offset += 1
-                if label_goblin.label == self.target_label:
-                    label = label_goblin.label
-                    break
-        if label is None:
-            raise SyntaxError("Label not found.")
-        return self.__parse_offset__(str(offset))
-
-    def toBinary(self, link):
+    def toBinary(self):
         if self.offset is None and self.target_label is not None:
-            self.offset = self.__find_label__()
+            self.offset = find_label(self)
         output = [
-            (self.condition + "101" + link),
+            (self.condition + "101" + self.link),
             self.offset[0:8],
             self.offset[8:16],
             self.offset[16:24],
         ]
         return output
 
-    def __parse_offset__(self, offset):
-        if offset[0] == "-":
-            offset_positive = offset[1:]
-            offset_binary = bin(int(offset_positive)).replace("0b", "").zfill(24)
-            offset_inverse = "".join(["1" if x == "0" else "0" for x in offset_binary])
-            offset = bin(int(offset_inverse, 2) + 1).replace("0b", "").zfill(24)
-        else:
-            offset = bin(int(offset)).replace("0b", "").zfill(24)
-        return offset
-
 
 class B(Branch):
-    def toBinary(self):
-        return super().toBinary("0")
+    def __init__(self, args, label=None):
+        if "L" in args[1]:
+            link = "1"
+        else:
+            link = "0"
+        super().__init__(args, link, label)
 
-
-class BL(Branch):
     def toBinary(self):
-        return super().toBinary("1")
+        return super().toBinary()
 
 
 class BX(Command):
     def toBinary(self):
-        if len(self.args) > 0:
-            register = resolve_register(self.args[0])
+        print(self.args)
+        if len(self.args) > 1:
+            register = resolve_register(self.args[1])
         else:
             register = resolve_register("R14")
 
@@ -229,8 +217,3 @@ class BX(Command):
             "0001" + register,
         ]
         return output
-
-
-if __name__ == "__main__":
-    node = Comment(["This is a comment"])
-    node.setNext(Comment(["This is another comment"]))
