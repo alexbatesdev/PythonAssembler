@@ -60,4 +60,4 @@ class Command:
         previous.next = self
 
     def __str__(self) -> str:
-        return f"{self.previous.__class__.__name__} <- {self.__class__.__name__} {' '.join(self.args)} {self.label != None and ':3 '+self.label or ''} -> {self.next.__class__.__name__}"
+        return f"{self.__class__.__name__} {self.condition} {' '.join(self.args[1:])} {self.label != None and ':3 '+self.label or ''}"

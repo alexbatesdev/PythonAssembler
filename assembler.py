@@ -52,7 +52,7 @@ def main():
                     and instruction_object.__class__.__name__ != "Comment"
                 ):
                     instruction_set.append(instruction_object)
-                    print(line.replace("\n", ""))
+                    print(instruction_object)
                 elif instruction_object.__class__.__name__ == "Comment":
                     instruction_object.toBinary()
                 else:

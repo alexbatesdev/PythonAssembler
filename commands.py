@@ -106,7 +106,7 @@ class SingleDataTransfer(Command):
         w_bit="0",
         offset="000000000000",
     ):
-        super().__init__(args, condition, label)
+        super().__init__(args, label)
         self.p_bit = p_bit
         self.u_bit = u_bit
         self.b_bit = b_bit
@@ -146,7 +146,7 @@ class STR(SingleDataTransfer):
 # page 37 - ARM instruction set
 class BlockDataTransfer(Command):
     def __init__(self, args, condition="AL", label=None):
-        super().__init__(args, condition, label)
+        super().__init__(args, label)
         raise NotImplementedError("BlockDataTransfer is not implemented yet.")
 
     def toBinary(self, load):
