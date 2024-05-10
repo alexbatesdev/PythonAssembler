@@ -1,4 +1,16 @@
-from commands import Comment, MOVW, MOVT, ADD, LDR, ORR, STR, SUB, B, BX, LDM, STM
+from commands import (
+    Comment,
+    MOVW,
+    MOVT,
+    ADD,
+    LDR,
+    ORR,
+    STR,
+    SUB,
+    B,
+    BX,
+    BlockDataTransfer,
+)
 from data_structures import CommandList
 from helper import strip_commas, strip_parenthesis
 
@@ -10,8 +22,8 @@ def main():
         "MOVT": MOVT,
         "LDR": LDR,
         "STR": STR,
-        "LDM": LDM,
-        "STM": STM,
+        "LDM": BlockDataTransfer,
+        "STM": BlockDataTransfer,
         "ORR": ORR,
         "ADD": ADD,
         "SUB": SUB,
@@ -40,11 +52,10 @@ def main():
 
             # Iterate through the methods dictionary to find the correct command
             for command in methods.keys():
-                if command in split_line:
+                if command in split_line[0]:
                     break
 
             args = split_line
-
             try:
                 instruction_object = methods[command](args, label=label)
                 if (

@@ -1,4 +1,9 @@
-from helper import resolve_register, find_label
+from helper import (
+    resolve_register,
+    find_label,
+    resolve_address_mode,
+    resolve_register_list,
+)
 from data_structures import Command
 
 
@@ -98,7 +103,6 @@ class SingleDataTransfer(Command):
     def __init__(
         self,
         args,
-        condition="AL",
         label=None,
         p_bit="0",
         u_bit="0",
@@ -145,22 +149,28 @@ class STR(SingleDataTransfer):
 
 # page 37 - ARM instruction set
 class BlockDataTransfer(Command):
-    def __init__(self, args, condition="AL", label=None):
-        super().__init__(args, label)
-        raise NotImplementedError("BlockDataTransfer is not implemented yet.")
-
-    def toBinary(self, load):
-        raise NotImplementedError("BlockDataTransfer is not implemented yet.")
-
-
-class STM(BlockDataTransfer):
     def toBinary(self):
-        return super().toBinary("0")
+        s = "0"
+        load, pre_post, up_down = resolve_address_mode(self.args[0])
+        base_register = self.args[1]
 
+        write_back = ""
+        if "!" in base_register:
+            write_back = "1"
+            base_register = base_register.replace("!", "")
+        else:
+            write_back = "0"
 
-class LDM(BlockDataTransfer):
-    def toBinary(self):
-        return super().toBinary("1")
+        base_register = resolve_register(base_register)
+
+        register_list = resolve_register_list(self.args[2:])
+        output = [
+            self.condition + "100" + pre_post,
+            up_down + s + write_back + load + base_register,
+            register_list[0:8],
+            register_list[8:16],
+        ]
+        return output
 
 
 class Branch(Command):
