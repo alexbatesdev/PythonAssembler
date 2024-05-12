@@ -100,25 +100,19 @@ class ORR(SingleDataProcess):
 
 # Page 26 - ARM instruction set
 class SingleDataTransfer(Command):
-    def __init__(
-        self,
-        args,
-        label=None,
-        p_bit="0",
-        u_bit="0",
-        b_bit="0",
-        w_bit="0",
-        offset="000000000000",
-    ):
-        super().__init__(args, label)
-        self.p_bit = p_bit
-        self.u_bit = u_bit
-        self.b_bit = b_bit
-        self.w_bit = w_bit
-        self.offset = offset
-
     def toBinary(self, load):
-        register = resolve_register(self.args[1])
+        b_bit = "0"
+        load, pre_post, up_down = resolve_address_mode(self.args[0])
+        register = self.args[1]
+        write_back = ""
+        if "!" in register:
+            write_back = "1"
+            register = register.replace("!", "")
+        else:
+            write_back = "0"
+
+        register = resolve_register(register)
+
         value = resolve_register(self.args[2])
         immediate = "0"
         if value[0:2] == "0x":
@@ -128,11 +122,16 @@ class SingleDataTransfer(Command):
             immediate = "0"
             value = value.replace("R", "")
 
+        if len(self.args) > 3:
+            offset = bin(int(self.args[3], 16)).replace("0b", "").zfill(12)
+        else:
+            offset = "0" * 12
+
         output = [
-            (self.condition + "01" + immediate + self.p_bit),
-            (self.u_bit + self.b_bit + self.w_bit + load + value),
-            (register + self.offset[0:4]),
-            (self.offset[4:12]),
+            (self.condition + "01" + immediate + pre_post),
+            (up_down + b_bit + write_back + load + value),
+            (register + offset[0:4]),
+            (offset[4:12]),
         ]
         return output
 
@@ -149,9 +148,13 @@ class STR(SingleDataTransfer):
 
 # page 37 - ARM instruction set
 class BlockDataTransfer(Command):
+    def __init__(self, args, label=None):
+        super().__init__(args, label)
+        self.load = "0"
+
     def toBinary(self):
         s = "0"
-        load, pre_post, up_down = resolve_address_mode(self.args[0])
+        self.load, pre_post, up_down = resolve_address_mode(self.args[0])
         base_register = self.args[1]
 
         write_back = ""
@@ -166,7 +169,7 @@ class BlockDataTransfer(Command):
         register_list = resolve_register_list(self.args[2:])
         output = [
             self.condition + "100" + pre_post,
-            up_down + s + write_back + load + base_register,
+            up_down + s + write_back + self.load + base_register,
             register_list[0:8],
             register_list[8:16],
         ]
@@ -214,7 +217,6 @@ class B(Branch):
 
 class BX(Command):
     def toBinary(self):
-        print(self.args)
         if len(self.args) > 1:
             register = resolve_register(self.args[1])
         else:

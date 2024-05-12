@@ -23,6 +23,8 @@ class CommandList:
             for i in current_binary[::-1]:
                 inverted_binary.append(i)
             binary.extend(inverted_binary)
+            print(current)
+            print(current_binary)
             current = current.next
         return binary
 
@@ -60,4 +62,4 @@ class Command:
         previous.next = self
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__} {self.condition} {' '.join(self.args[1:])} {self.label != None and ':3 '+self.label or ''}"
+        return f"{' '.join(self.args)}"

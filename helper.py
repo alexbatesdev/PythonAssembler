@@ -100,6 +100,8 @@ def find_label(self):
 
 def resolve_address_mode(mode: str):
     match mode:
+        case "LDM":
+            return ("1", "0", "0")
         case "LDMED":
             return ("1", "1", "1")
         case "LDMFD":
@@ -108,6 +110,8 @@ def resolve_address_mode(mode: str):
             return ("1", "1", "0")
         case "LDMFA":
             return ("1", "0", "0")
+        case "STM":
+            return ("0", "0", "0")
         case "STMED":
             return ("0", "0", "0")
         case "STMFD":
@@ -115,6 +119,26 @@ def resolve_address_mode(mode: str):
         case "STMEA":
             return ("0", "0", "1")
         case "STMFA":
+            return ("0", "1", "1")
+        case "LDR":
+            return ("1", "0", "0")
+        case "LDRED":
+            return ("1", "1", "1")
+        case "LDRFD":
+            return ("1", "0", "1")
+        case "LDREA":
+            return ("1", "1", "0")
+        case "LDRFA":
+            return ("1", "0", "0")
+        case "STR":
+            return ("0", "0", "0")
+        case "STRED":
+            return ("0", "0", "0")
+        case "STRFD":
+            return ("0", "1", "0")
+        case "STREA":
+            return ("0", "0", "1")
+        case "STRFA":
             return ("0", "1", "1")
         case _:
             raise SyntaxError("Invalid address mode.")

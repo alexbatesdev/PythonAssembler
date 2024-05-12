@@ -33,8 +33,8 @@ def main():
 
     instruction_set = CommandList()
 
-    path = "input.txt"
-    path_input = input("Enter the path of the input file (./input.txt): ")
+    path = "test.txt"
+    path_input = input(f"Enter the path of the input file (./{path}): ")
     if path_input != "":
         path = path_input
 
