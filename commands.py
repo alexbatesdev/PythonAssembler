@@ -103,17 +103,15 @@ class SingleDataTransfer(Command):
     def toBinary(self, load):
         b_bit = "0"
         load, pre_post, up_down = resolve_address_mode(self.args[0])
-        register = self.args[1]
-        write_back = ""
-        if "!" in register:
+        register = resolve_register(self.args[1])
+        write_back = "0"
+        value = self.args[2]
+        if "!" in value:
             write_back = "1"
-            register = register.replace("!", "")
-        else:
-            write_back = "0"
+            value = value.replace("!", "")
 
-        register = resolve_register(register)
+        value = resolve_register(value)
 
-        value = resolve_register(self.args[2])
         immediate = "0"
         if value[0:2] == "0x":
             value = value[2:]
