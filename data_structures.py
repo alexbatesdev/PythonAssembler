@@ -24,7 +24,11 @@ class CommandList:
                 inverted_binary.append(i)
             binary.extend(inverted_binary)
             print(current)
+            print(current.getEncoding())
             print(current_binary)
+            # print binary as hex
+            print(" ".join([hex(int(i, 2))[2:].zfill(2) for i in inverted_binary]))
+            print("---------------------------")
             current = current.next
         return binary
 
@@ -46,9 +50,7 @@ class Command:
         self.label: str = label
         self.next: Command = None
         self.previous: Command = None
-        self.condition = resolve_condition(
-            self.args[0].replace(self.__class__.__name__, "")
-        )
+        self.condition = resolve_condition(self.args[0][-2:])
 
     def toBinary(self):
         raise NotImplementedError("Subclasses should implement this method.")

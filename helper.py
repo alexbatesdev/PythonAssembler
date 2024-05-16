@@ -95,6 +95,8 @@ def find_label(self):
                 break
     if label is None:
         raise SyntaxError("Label not found.")
+    # print(label_goblin)
+    # input(f"Label found at offset {offset}. Press Enter to continue...")
     return parse_offset(str(offset))
 
 

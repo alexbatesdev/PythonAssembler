@@ -3,13 +3,12 @@ from commands import (
     MOVW,
     MOVT,
     ADD,
-    LDR,
     ORR,
-    STR,
     SUB,
-    B,
+    Branch,
     BX,
     BlockDataTransfer,
+    SingleDataTransfer,
 )
 from data_structures import CommandList
 from helper import strip_commas, strip_parenthesis
@@ -20,20 +19,20 @@ def main():
         "^^": Comment,
         "MOVW": MOVW,
         "MOVT": MOVT,
-        "LDR": LDR,
-        "STR": STR,
+        "LDR": SingleDataTransfer,
+        "STR": SingleDataTransfer,
         "LDM": BlockDataTransfer,
         "STM": BlockDataTransfer,
         "ORR": ORR,
         "ADD": ADD,
         "SUB": SUB,
         "BX": BX,
-        "B": B,
+        "B": Branch,
     }
 
     instruction_set = CommandList()
 
-    path = "test.txt"
+    path = "input.txt"
     path_input = input(f"Enter the path of the input file (./{path}): ")
     if path_input != "":
         path = path_input
@@ -76,20 +75,30 @@ def main():
                 print(e)
                 continue
 
-    path = "output.txt"
-    path_output = input("Enter the output path of the file (./output.txt): ")
+    path = "kernel7.img"
+    path_output = input(f"Enter the output path of the file (./{path}): ")
     if path_output != "":
         path = path_output
 
     with open(path, "wb") as output_file:
-        input("Press Enter to continue to binary")
+        input("Press Enter to continue to binary...")
         binary_values = instruction_set.toBinary()
-        print("Binary values: ")
-        print(binary_values)
-        input("Press Enter to continue...")
-        byte_array = bytes([int(b, 2) for b in binary_values])
-        output_file.write(byte_array)
-        output_file.close()
+        valid_input = False
+        while not valid_input:
+            user_input = input("Write to file? (Y/N) ")
+            if user_input.lower() == "n":
+                valid_input = True
+                print("Write aborted. Exiting...")
+                return
+            elif user_input.lower() == "y":
+                byte_array = bytes([int(b, 2) for b in binary_values])
+                output_file.write(byte_array)
+                output_file.close()
+                valid_input = True
+                print(f"File written to {path}")
+            else:
+                print("Invalid input")
+                continue
 
 
 if __name__ == "__main__":

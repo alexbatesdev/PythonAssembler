@@ -30,6 +30,9 @@ class MOVW(Command):
         ]
         return output
 
+    def getEncoding(self):
+        return "[condition][0011][0000][imm4][Rd][imm12]"
+
 
 class MOVT(Command):
     def toBinary(self):
@@ -47,6 +50,9 @@ class MOVT(Command):
             imm12[4:14],
         ]
         return output
+
+    def getEncoding(self):
+        return "[condition][0011][0100][imm4][Rd][imm12]"
 
 
 class SingleDataProcess(Command):
@@ -82,6 +88,9 @@ class SingleDataProcess(Command):
         ]
         return output
 
+    def getEncoding(self):
+        return "[condition][00][I][opcode][S][Rn][Rd][Operand2]"
+
 
 class ADD(SingleDataProcess):
     def toBinary(self):
@@ -100,48 +109,43 @@ class ORR(SingleDataProcess):
 
 # Page 26 - ARM instruction set
 class SingleDataTransfer(Command):
-    def toBinary(self, load):
+    def toBinary(self):
         b_bit = "0"
         load, pre_post, up_down = resolve_address_mode(self.args[0])
-        register = resolve_register(self.args[1])
+        destination_register = self.args[1]
         write_back = "0"
-        value = self.args[2]
-        if "!" in value:
+        if "!" in destination_register:
             write_back = "1"
-            value = value.replace("!", "")
-
-        value = resolve_register(value)
+            destination_register = destination_register.replace("!", "")
+        destination_register = resolve_register(destination_register)
+        base_register = self.args[2]
+        if "!" in base_register:
+            write_back = "1"
+            base_register = base_register.replace("!", "")
+        base_register = resolve_register(base_register)
 
         immediate = "0"
-        if value[0:2] == "0x":
-            value = value[2:]
-            immediate = "1"
-        elif value[0] == "R":
-            immediate = "0"
-            value = value.replace("R", "")
 
         if len(self.args) > 3:
+            if self.args[3][0:2] == "0x":
+                offset = self.args[3][2:]
+            else:
+                immediate = "1"
+                offset = self.args[3].replace("R", "")
             offset = bin(int(self.args[3], 16)).replace("0b", "").zfill(12)
         else:
             offset = "0" * 12
 
         output = [
             (self.condition + "01" + immediate + pre_post),
-            (up_down + b_bit + write_back + load + value),
-            (register + offset[0:4]),
+            (up_down + b_bit + write_back + load + base_register),
+            (destination_register + offset[0:4]),
             (offset[4:12]),
         ]
         return output
 
-
-class LDR(SingleDataTransfer):
-    def toBinary(self):
-        return super().toBinary("1")
-
-
-class STR(SingleDataTransfer):
-    def toBinary(self):
-        return super().toBinary("0")
+    def getEncoding(self):
+        return "[condition][01][I][P][U][B][W][L][Rn][Rd][Offset12]"
 
 
 # page 37 - ARM instruction set
@@ -173,13 +177,19 @@ class BlockDataTransfer(Command):
         ]
         return output
 
+    def getEncoding(self):
+        return "[condition][100][P][U][S][W][L][Rn][RegisterList]"
+
 
 class Branch(Command):
-    def __init__(self, args, link, label=None):
+    def __init__(self, args, label=None):
         super().__init__(args, label)
         self.offset = None
         self.target_label = None
-        self.link = link
+        self.link = "0"
+        if args[0][:2] == "BL":
+            self.link = "1"
+
         if "0x" in args[1]:
             self.offset = bin(int(args[1], 16)).replace("0b", "").zfill(24)
         elif args[1] != ":3c":
@@ -200,17 +210,8 @@ class Branch(Command):
         ]
         return output
 
-
-class B(Branch):
-    def __init__(self, args, label=None):
-        if "L" in args[1]:
-            link = "1"
-        else:
-            link = "0"
-        super().__init__(args, link, label)
-
-    def toBinary(self):
-        return super().toBinary()
+    def getEncoding(self):
+        return "[condition][101][L][Offset24]"
 
 
 class BX(Command):
@@ -227,3 +228,6 @@ class BX(Command):
             "0001" + register,
         ]
         return output
+
+    def getEncoding(self):
+        return "[condition][0001][0010][1111][1111][1111][0001][Rn]"
