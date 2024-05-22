@@ -1,0 +1,123 @@
+^^ Store registers in use to the stack
+STMEA R13!, {R3-R12}
+
+^^ Method Logic
+
+^^ Load registers in use from stack
+LDMEA R13!, {R3-R12}
+
+
+
+^^ METHODS -----------------
+
+
+^^ Set Pin as output (PIN_NUMBER) -------------
+# Find memory address with function that has the pin number (0-14)
+# 0 - pins 0-9   [000][111][222][333][444][555][666][777][888][999][RES]
+# 4 - pins 10-19 [000][111][222][333][444][555][666][777][888][999][RES]
+# 8 - pins 20-29 [000][111][222][333][444][555][666][777][888][999][RES]
+# C - pins 30-39 [000][111][222][333][444][555][666][777][888][999][RES]
+# 10 - pins 40-49 [000][111][222][333][444][555][666][777][888][999][RES]
+# 14 - pins 50-53 [000][111][222][333][444][555][666][777][888][999][RES]
+# Set memory at that address to value corresponding to pin state
+# input 000
+# output 001
+# Alternate functions for the rest
+
+
+StoreRegisters()
+
+StoreToRegister(0x3F200000, R4)
+
+^^ Set pin 28 on - store to Register 2
+ADD R5, R4, FUNCTION ADDRESS
+^^ Load the address at R5 into R3
+LDR R3, (R5)
+^^ Make sure it's on
+ORR R3, R3, PIN_BINARY
+^^ Store the value at the address in R5
+STR R3, (R5)
+
+LoadRegisters()
+^^ -------------------------------------------------
+
+
+
+^^ Turn Pin On (PIN_NUMBER) --------------
+# PIN_ADDRESS is 1C for PIN_NUMBER <= 31
+# PIN_ADDRESS is 20 for PIN_NUMBER >= 32
+# PIN_BINARY is just counting backward from the right
+# If PIN_NUMBER >= 32 you subtract 32 
+
+StoreRegisters()
+
+StoreToRegister(0x3F200000, R4)
+ADD R3, R4, PIN_ADDRESS
+
+^^ Set pin as on --------------------- How the bits map?
+StoreToRegister(PIN_NUMBER, R5)
+
+^^ Store R5 at the address in R3
+STR R5, (R3)
+
+LoadRegisters()
+
+
+
+^^ Turn Pin Off (PIN_NUMBER) ----------------
+# PIN_ADDRESS is 28 for PIN_NUMBER <= 31
+# PIN_ADDRESS is 2C for PIN_NUMBER >= 32
+# PIN_BINARY is just counting backward from the right
+# If PIN_NUMBER >= 32 you subtract 32 
+
+StoreRegisters()
+
+StoreToRegister(0x3F200000, R4)
+ADD R3, R4, PIN_ADDRESS
+
+StoreToRegister(PIN_NUMBER, R5)
+
+STR R5, (R3)
+LoadRegisters()
+^^ ---------------------------------------
+
+
+
+^^ Wait (WAIT_MULTIPLIER) --------------------
+^^ Pop the top off the stack
+StoreRegisters()
+
+StoreToRegister(0x3F4240, R6)
+SUB S R6, R6, 1
+BPL 0xFFFFFD
+
+LoadRegisters()
+^^ ------------------------------------------
+
+
+
+^^ StoreRegisters() ---------------------
+STMEA R13!, {R3-R12}
+^^ --------------------------------------
+
+
+
+^^ LoadRegisters() ----------------------
+LDMEA R13!, {R3-R12}
+^^ --------------------------------------
+
+
+
+^^ StoreToRegister (VALUE, REGISTER) --------------
+# VALUE_T = Top half of value
+# VALUE_W = Bottom half of value
+
+MOVT REGISTER, VALUE_T
+MOVW REGISTER, VALUE_W
+^^ --------------------------------------
+
+
+
+^^ Branch (LABEL) --------------------
+B :3c LABEL
+^^ -----------------------------------

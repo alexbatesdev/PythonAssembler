@@ -3,21 +3,39 @@ MOVW R13, 0x0
 MOVT R13, 0x0
 
 ^^ Set pin as output
+^^ Set Register 4 to the address in ram that has special methods
 MOVW R4, 0
 MOVT R4, 0x3F20
+^^ Set pin 28 on - store to Register 2
 ADD R2, R4, 0x08
+^^ Load the address at R2 into R3
 LDR R3, (R2)
+^^ Make sure it's on
 ORR R3, R3, 0x00000008
+^^ Store the value at the address in R2
 STR R3, (R2)
 
 ^^ Turn pin on
+^^ Add 0x1C with R4 and store in R3
 ADD R3, R4, 0x1C :3 START
+^^ Set pin as on --------------------- How the bits map?
 MOVW R2, 0x0000
 MOVT R2, 0x0020
+0000 0000 0010 0000 0000 0000 0000 0000
+^^ Store R2 at the address in R3
 STR R2, (R3)
 
+^^ Store all our registers
+STMEA R13!, {R0-R12}
+^^ Put 1 Million in R7
+MOVW R7, 0x4240
+MOVT R7, 0x3F
+^^ Store R7 on the stack
+STREA R7, R13!, 0x4
 ^^ Go to Subroutine
 BL :3c WAIT
+^^ load all our registers
+LDMEA R13!, {R0-R12}
 
 ^^ Turn pin off
 ADD R3, R4, 0x28
@@ -25,7 +43,25 @@ MOVW R2, 0x0000
 MOVT R2, 0x0020
 STR R2, (R3)
 
+^^ Store all our registers
+STMEA R13!, {R0-R12}
+^^ Put 1 Million in R7
+MOVW R7, 0x4240
+MOVT R7, 0xF
+
+^^ Store R7 on the stack
+STREA R7, R13!, 0x4
+^^ Go to Subroutine
+BL :3c WAIT
+
+^^ load all our registers
+LDMEA R13!, {R0-R12}
+
+B :3c START
+
 ^^ Wait -[Subroutine]-
 ^^ Pop the top off the stack
-MOVW R7, 0x0000 :3 WAIT
+LDREA R6 R13!, 0x4 :3 WAIT
+SUB S R6, R6, 1
+BPL 0xFFFFFD
 BX
