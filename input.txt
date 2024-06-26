@@ -18,7 +18,7 @@ STR R3, (R2)
 ^^ Turn pin on
 ^^ Add 0x1C with R4 and store in R3
 ADD R3, R4, 0x1C :3 START
-^^ Set pin as on --------------------- How the bits map?
+^^ Set pin as on
 MOVW R2, 0x0000
 MOVT R2, 0x0020
 0000 0000 0010 0000 0000 0000 0000 0000
